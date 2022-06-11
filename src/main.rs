@@ -1,3 +1,4 @@
+use serenity::utils::MessageBuilder;
 use serenity::{async_trait, framework, model, prelude::*};
 use framework::standard::macros::{command, group, hook};
 use framework::standard::{
@@ -83,21 +84,27 @@ async fn role(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     
     // NOTE: checks local cache only
     // there's def a cool nice way to do this without any panicking
+    // TODO: guarantee that there's a guild in the cache, or handle the case when there isn't
     let guild = msg.guild(&ctx.cache).expect("There's a guild");
+    let http = &ctx.http;
     
-    let message = 
-        if let Some(Role {id, ..}) = guild.role_by_name(potential_role_name) {
-            guild.member(&ctx.http, &msg.author)
+    let message = if let Some(Role {id, ..}) = guild.role_by_name(potential_role_name) {
+            let user = &msg.author;
+            guild.member(http, user)
                 .await?
-                .add_role(&ctx.http, id)
+                .add_role(http, id)
                 .await?;
-            "got em".into()
+            MessageBuilder::new()
+                .push("Here you go, ")
+                .user(user)
+                .push('!')
+                .build()
         } else {
             format!("Couldn't find role named '{potential_role_name}'")
         };
     
     msg.channel_id
-        .say(&ctx.http, message)
+        .say(http, message)
         .await?;
     
     Ok(())
