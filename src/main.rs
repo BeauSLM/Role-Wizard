@@ -62,7 +62,10 @@ async fn main() {
         .unrecognised_command(unknown_command)
         .group(&WHYDOINEEDTHIS_GROUP);
     
-    let intents = GatewayIntents::all();
+    let intents = GatewayIntents::MESSAGE_CONTENT
+        | GatewayIntents::GUILDS
+        | GatewayIntents::GUILD_MESSAGES;
+
     let mut client = Client::builder(&token, intents)
         .event_handler(Handler)
         .framework(framework)
